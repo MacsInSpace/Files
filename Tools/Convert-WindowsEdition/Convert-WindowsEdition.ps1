@@ -1,43 +1,45 @@
-﻿<#
+<#
  # This script will give you the option to change the SKU.
  # The script detects the Server OS version and present a list of other SKU's that the current version can be converted into
- # Version 2.0
+ # Version 2.1
  # Added Selfelevating : Script "borrowed" from Ben Armstrong - https://blogs.msdn.microsoft.com/virtual_pc_guy/2010/09/23/a-self-elevating-powershell-script/
  # Added support for Windows Server 2016
+ # Added support for Windows Server 2019
+ # Added support for Windows Server 2022 from https://learn.microsoft.com/en-us/windows-server/get-started/kms-client-activation-keys#windows-server-2022
 #>
 
 
 # Get the ID and security principal of the current user account
- $myWindowsID=[System.Security.Principal.WindowsIdentity]::GetCurrent()
- $myWindowsPrincipal=new-object System.Security.Principal.WindowsPrincipal($myWindowsID)
-  
- # Get the security principal for the Administrator role
- $adminRole=[System.Security.Principal.WindowsBuiltInRole]::Administrator
-  
- # Check to see if we are currently running "as Administrator"
+$myWindowsID=[System.Security.Principal.WindowsIdentity]::GetCurrent()
+$myWindowsPrincipal=new-object System.Security.Principal.WindowsPrincipal($myWindowsID)
+ 
+# Get the security principal for the Administrator role
+$adminRole=[System.Security.Principal.WindowsBuiltInRole]::Administrator
+ 
+# Check to see if we are currently running "as Administrator"
 if ($myWindowsPrincipal.IsInRole($adminRole)){
-    # We are running "as Administrator" - so change the title and background color to indicate this
-    $Host.UI.RawUI.WindowTitle = $myInvocation.MyCommand.Definition + "(Elevated)"
-    $Host.UI.RawUI.BackgroundColor = "DarkBlue"
-    clear-host
+   # We are running "as Administrator" - so change the title and background color to indicate this
+   $Host.UI.RawUI.WindowTitle = $myInvocation.MyCommand.Definition + "(Elevated)"
+   $Host.UI.RawUI.BackgroundColor = "DarkBlue"
+   clear-host
 }
 else{
-    # We are not running "as Administrator" - so relaunch as administrator
-    
-    # Create a new process object that starts PowerShell
-    $newProcess = new-object System.Diagnostics.ProcessStartInfo "PowerShell";
-    
-    # Specify the current script path and name as a parameter
-    $newProcess.Arguments = $myInvocation.MyCommand.Definition;
-    
-    # Indicate that the process should be elevated
-    $newProcess.Verb = "runas";
-    
-    # Start the new process
-    [System.Diagnostics.Process]::Start($newProcess);
-    
-    # Exit from the current, unelevated, process
-    exit
+   # We are not running "as Administrator" - so relaunch as administrator
+   
+   # Create a new process object that starts PowerShell
+   $newProcess = new-object System.Diagnostics.ProcessStartInfo "PowerShell";
+   
+   # Specify the current script path and name as a parameter
+   $newProcess.Arguments = $myInvocation.MyCommand.Definition;
+   
+   # Indicate that the process should be elevated
+   $newProcess.Verb = "runas";
+   
+   # Start the new process
+   [System.Diagnostics.Process]::Start($newProcess);
+   
+   # Exit from the current, unelevated, process
+   exit
 }
 
 Function Show-BoxSelection{
@@ -51,9 +53,9 @@ $objForm.StartPosition = "CenterScreen"
 
 $objForm.KeyPreview = $True
 $objForm.Add_KeyDown({if ($_.KeyCode -eq "Enter") 
-    {$x=$objListBox.SelectedItem;$objForm.Close()}})
+   {$x=$objListBox.SelectedItem;$objForm.Close()}})
 $objForm.Add_KeyDown({if ($_.KeyCode -eq "Escape") 
-    {$objForm.Close()}})
+   {$objForm.Close()}})
 
 $OKButton = New-Object System.Windows.Forms.Button
 $OKButton.Location = New-Object System.Drawing.Size(200,133)
@@ -107,9 +109,9 @@ $objForm.StartPosition = "CenterScreen"
 
 $objForm.KeyPreview = $True
 $objForm.Add_KeyDown({if ($_.KeyCode -eq "Enter") 
-    {$x=$objListBox.SelectedItem;$objForm.Close()}})
+   {$x=$objListBox.SelectedItem;$objForm.Close()}})
 $objForm.Add_KeyDown({if ($_.KeyCode -eq "Escape") 
-    {$objForm.Close()}})
+   {$objForm.Close()}})
 
 $OKButton = New-Object System.Windows.Forms.Button
 $OKButton.Location = New-Object System.Drawing.Size(200,133)
@@ -157,9 +159,9 @@ $objForm.StartPosition = "CenterScreen"
 
 $objForm.KeyPreview = $True
 $objForm.Add_KeyDown({if ($_.KeyCode -eq "Enter") 
-    {$x=$objListBox.SelectedItem;$objForm.Close()}})
+   {$x=$objListBox.SelectedItem;$objForm.Close()}})
 $objForm.Add_KeyDown({if ($_.KeyCode -eq "Escape") 
-    {$objForm.Close()}})
+   {$objForm.Close()}})
 
 $OKButton = New-Object System.Windows.Forms.Button
 $OKButton.Location = New-Object System.Drawing.Size(200,133)
@@ -185,251 +187,299 @@ $objForm.Add_Shown({$objForm.Activate()})
 [void] $objForm.ShowDialog()
 }
 Function Inventory-Computer{
-    $CurrentWinCaption = Get-WmiObject -Class Win32_OperatingSystem
-    #Write-Output $CurrentWinCaption.Caption
-    Switch ($CurrentWinCaption.Caption){
-        'Microsoft Windows Server 2008 R2 Standard '{
-            Write-Verbose [String]$CurrentWinCaption.Caption
-            $UpgradeSelection01 = "Microsoft Windows Server 2008 R2 Enterprise"
-            $UpgradeSelection02 = "Microsoft Windows Server 2008 R2 Datacenter"
-            }
-        'Microsoft Windows Server 2008 R2 Enterprise '{
-            Write-Verbose $CurrentWinCaption.Caption
-            $UpgradeSelection01 = "Microsoft Windows Server 2008 R2 Datacenter"
-            $UpgradeSelection02 = "NA"
-            }
-        'Microsoft Windows Server 2008 R2 Datacenter '{
-            Write-Verbose $CurrentWinCaption.Caption
-            $UpgradeSelection01 = "Unable to upgrade current edition"
-            $UpgradeSelection02 = "NA"
-            }
-        'Microsoft Windows Server 2012 Standard'{
-            Write-Verbose $CurrentWinCaption.Caption
-            $UpgradeSelection01 = "Microsoft Windows Server 2012 Datacenter"
-            $UpgradeSelection02 = "NA"
-            }
-        'Microsoft Windows Server 2012 Standard Evaluation'{
-            Write-Verbose $CurrentWinCaption.Caption
-            $UpgradeSelection01 = "Microsoft Windows Server 2012 Standard"
-            $UpgradeSelection02 = "Microsoft Windows Server 2012 Datacenter"
-            }
-        'Microsoft Windows Server 2012 Datacenter Evaluation'{
-            Write-Verbose $CurrentWinCaption.Caption
-            $UpgradeSelection01 = "Microsoft Windows Server 2012 Datacenter"
-            $UpgradeSelection02 = "NA"
-            }
-        'Microsoft Windows Server 2012 Datacenter'{
-            Write-Verbose $CurrentWinCaption.Caption
-            $UpgradeSelection01 = "Unable to upgrade current edition"
-            $UpgradeSelection02 = "NA"
-            }
-        'Microsoft Windows Server 2012 R2 Standard'{
-            Write-Verbose $CurrentWinCaption.Caption
-            $UpgradeSelection01 = "Microsoft Windows Server 2012 R2 Datacenter"
-            $UpgradeSelection02 = "NA"
-            }
-        'Microsoft Windows Server 2012 R2 Standard Evaluation'{
-            Write-Verbose $CurrentWinCaption.Caption
-            $UpgradeSelection01 = "Microsoft Windows Server 2012 R2 Standard"
-            $UpgradeSelection02 = "Microsoft Windows Server 2012 R2 Datacenter"
-            }
-        'Microsoft Windows Server 2012 R2 Datacenter Evaluation'{
-            Write-Verbose $CurrentWinCaption.Caption
-            $UpgradeSelection01 = "Upgrade to Microsoft Windows Server 2012 R2 Datacenter"
-            $UpgradeSelection02 = "NA"
-            }
-        'Microsoft Windows Server 2012 R2 Datacenter'{
-            Write-Verbose $CurrentWinCaption.Caption
-            $UpgradeSelection01 = "Unable to upgrade current edition"
-            $UpgradeSelection02 = "NA"
-            }
-        'Microsoft Windows Server 2016 Standard'{
-            Write-Verbose $CurrentWinCaption.Caption
-            $UpgradeSelection01 = "Microsoft Windows Server 2016 Datacenter"
-            $UpgradeSelection02 = "NA"
-            }
-        'Microsoft Windows Server 2016 Standard Evaluation'{
-            Write-Verbose $CurrentWinCaption.Caption
-            $UpgradeSelection01 = "Microsoft Windows Server 2016 Standard"
-            $UpgradeSelection02 = "Microsoft Windows Server 2016 Datacenter"
-            }
-        'Microsoft Windows Server 2016 Datacenter Evaluation'{
-            Write-Verbose $CurrentWinCaption.Caption
-            $UpgradeSelection01 = "Upgrade to Microsoft Windows Server 2016 Datacenter"
-            $UpgradeSelection02 = "NA"
-            }
-        'Microsoft Windows Server 2016 Datacenter'{
-            Write-Verbose $CurrentWinCaption.Caption
-            $UpgradeSelection01 = "Unable to upgrade current edition"
-            $UpgradeSelection02 = "NA"
-            }
-        'Microsoft Windows Server 2019 Standard'{
+   $CurrentWinCaption = Get-WmiObject -Class Win32_OperatingSystem
+   #Write-Output $CurrentWinCaption.Caption
+   Switch ($CurrentWinCaption.Caption){
+       'Microsoft Windows Server 2008 R2 Standard '{
+           Write-Verbose [String]$CurrentWinCaption.Caption
+           $UpgradeSelection01 = "Microsoft Windows Server 2008 R2 Enterprise"
+           $UpgradeSelection02 = "Microsoft Windows Server 2008 R2 Datacenter"
+           }
+       'Microsoft Windows Server 2008 R2 Enterprise '{
+           Write-Verbose $CurrentWinCaption.Caption
+           $UpgradeSelection01 = "Microsoft Windows Server 2008 R2 Datacenter"
+           $UpgradeSelection02 = "NA"
+           }
+       'Microsoft Windows Server 2008 R2 Datacenter '{
+           Write-Verbose $CurrentWinCaption.Caption
+           $UpgradeSelection01 = "Unable to upgrade current edition"
+           $UpgradeSelection02 = "NA"
+           }
+       'Microsoft Windows Server 2012 Standard'{
+           Write-Verbose $CurrentWinCaption.Caption
+           $UpgradeSelection01 = "Microsoft Windows Server 2012 Datacenter"
+           $UpgradeSelection02 = "NA"
+           }
+       'Microsoft Windows Server 2012 Standard Evaluation'{
+           Write-Verbose $CurrentWinCaption.Caption
+           $UpgradeSelection01 = "Microsoft Windows Server 2012 Standard"
+           $UpgradeSelection02 = "Microsoft Windows Server 2012 Datacenter"
+           }
+       'Microsoft Windows Server 2012 Datacenter Evaluation'{
+           Write-Verbose $CurrentWinCaption.Caption
+           $UpgradeSelection01 = "Microsoft Windows Server 2012 Datacenter"
+           $UpgradeSelection02 = "NA"
+           }
+       'Microsoft Windows Server 2012 Datacenter'{
+           Write-Verbose $CurrentWinCaption.Caption
+           $UpgradeSelection01 = "Unable to upgrade current edition"
+           $UpgradeSelection02 = "NA"
+           }
+       'Microsoft Windows Server 2012 R2 Standard'{
+           Write-Verbose $CurrentWinCaption.Caption
+           $UpgradeSelection01 = "Microsoft Windows Server 2012 R2 Datacenter"
+           $UpgradeSelection02 = "NA"
+           }
+       'Microsoft Windows Server 2012 R2 Standard Evaluation'{
+           Write-Verbose $CurrentWinCaption.Caption
+           $UpgradeSelection01 = "Microsoft Windows Server 2012 R2 Standard"
+           $UpgradeSelection02 = "Microsoft Windows Server 2012 R2 Datacenter"
+           }
+       'Microsoft Windows Server 2012 R2 Datacenter Evaluation'{
+           Write-Verbose $CurrentWinCaption.Caption
+           $UpgradeSelection01 = "Upgrade to Microsoft Windows Server 2012 R2 Datacenter"
+           $UpgradeSelection02 = "NA"
+           }
+       'Microsoft Windows Server 2012 R2 Datacenter'{
+           Write-Verbose $CurrentWinCaption.Caption
+           $UpgradeSelection01 = "Unable to upgrade current edition"
+           $UpgradeSelection02 = "NA"
+           }
+       'Microsoft Windows Server 2016 Standard'{
+           Write-Verbose $CurrentWinCaption.Caption
+           $UpgradeSelection01 = "Microsoft Windows Server 2016 Datacenter"
+           $UpgradeSelection02 = "NA"
+           }
+       'Microsoft Windows Server 2016 Standard Evaluation'{
+           Write-Verbose $CurrentWinCaption.Caption
+           $UpgradeSelection01 = "Microsoft Windows Server 2016 Standard"
+           $UpgradeSelection02 = "Microsoft Windows Server 2016 Datacenter"
+           }
+       'Microsoft Windows Server 2016 Datacenter Evaluation'{
+           Write-Verbose $CurrentWinCaption.Caption
+           $UpgradeSelection01 = "Upgrade to Microsoft Windows Server 2016 Datacenter"
+           $UpgradeSelection02 = "NA"
+           }
+       'Microsoft Windows Server 2016 Datacenter'{
+           Write-Verbose $CurrentWinCaption.Caption
+           $UpgradeSelection01 = "Unable to upgrade current edition"
+           $UpgradeSelection02 = "NA"
+           }
+       'Microsoft Windows Server 2019 Standard'{
+           Write-Verbose $CurrentWinCaption.Caption
+           $UpgradeSelection01 = "Microsoft Windows Server 2019 Datacenter"
+           $UpgradeSelection02 = "NA"
+           }
+       'Microsoft Windows Server 2019 Standard Evaluation'{
+           Write-Verbose $CurrentWinCaption.Caption
+           $UpgradeSelection01 = "Microsoft Windows Server 2019 Standard"
+           $UpgradeSelection02 = "Microsoft Windows Server 2019 Datacenter"
+           }
+       'Microsoft Windows Server 2019 Datacenter Evaluation'{
+           Write-Verbose $CurrentWinCaption.Caption
+           $UpgradeSelection01 = "Upgrade to Microsoft Windows Server 2019 Datacenter"
+           $UpgradeSelection02 = "NA"
+           }
+       'Microsoft Windows Server 2019 Datacenter'{
+           Write-Verbose $CurrentWinCaption.Caption
+           $UpgradeSelection01 = "Unable to upgrade current edition"
+           $UpgradeSelection02 = "NA"
+           }
+           'Microsoft Windows Server 2022 Standard'{
             Write-Verbose $CurrentWinCaption.Caption
             $UpgradeSelection01 = "Microsoft Windows Server 2019 Datacenter"
             $UpgradeSelection02 = "NA"
             }
-        'Microsoft Windows Server 2019 Standard Evaluation'{
+        'Microsoft Windows Server 2022 Standard Evaluation'{
             Write-Verbose $CurrentWinCaption.Caption
-            $UpgradeSelection01 = "Microsoft Windows Server 2019 Standard"
-            $UpgradeSelection02 = "Microsoft Windows Server 2019 Datacenter"
+            $UpgradeSelection01 = "Microsoft Windows Server 2022 Standard"
+            $UpgradeSelection02 = "Microsoft Windows Server 2022 Datacenter"
             }
-        'Microsoft Windows Server 2019 Datacenter Evaluation'{
+        'Microsoft Windows Server 2022 Datacenter Evaluation'{
             Write-Verbose $CurrentWinCaption.Caption
-            $UpgradeSelection01 = "Upgrade to Microsoft Windows Server 2019 Datacenter"
+            $UpgradeSelection01 = "Upgrade to Microsoft Windows Server 2022 Datacenter"
             $UpgradeSelection02 = "NA"
             }
-        'Microsoft Windows Server 2019 Datacenter'{
+        'Microsoft Windows Server 2022 Datacenter'{
             Write-Verbose $CurrentWinCaption.Caption
             $UpgradeSelection01 = "Unable to upgrade current edition"
             $UpgradeSelection02 = "NA"
             }
-			Default{
-            Write-Verbose "Unable to upgrade"
-            $UpgradeSelection01 = "Unable To Upgrade"
-            $UpgradeSelection02 = "NA"
-            }
-        }
+           Default{
+           Write-Verbose "Unable to upgrade"
+           $UpgradeSelection01 = "Unable To Upgrade"
+           $UpgradeSelection02 = "NA"
+           }
+       }
 }
 Function Upgrade-SKU{
-    #$CurrentWindowsEdition = [String]$CurrentWinCaption.Caption
-    Switch ($CurrentWinCaption.Caption){
-        'Microsoft Windows Server 2008 R2 Standard '{
-            Write-Verbose [String]$CurrentWinCaption.Caption
-            if ($x -eq 'Microsoft Windows Server 2008 R2 Enterprise'){
-                $UpgradeToWinEditionPID = "489J6-VHDMP-X63PK-3K798-CPX3Y"
-				$CMD = "DISM.exe /Online /Set-Edition:ServerEnterprise /ProductKey:$UpgradeToWinEditionPID /AcceptEula /NoRestart"
-                }
-            if ($x -eq 'Microsoft Windows Server 2008 R2 Datacenter'){
-                $UpgradeToWinEditionPID = "74YFP-3QFB3-KQT8W-PMXWJ-7M648"
+   #$CurrentWindowsEdition = [String]$CurrentWinCaption.Caption
+   Switch ($CurrentWinCaption.Caption){
+       'Microsoft Windows Server 2008 R2 Standard '{
+           Write-Verbose [String]$CurrentWinCaption.Caption
+           if ($x -eq 'Microsoft Windows Server 2008 R2 Enterprise'){
+               $UpgradeToWinEditionPID = "489J6-VHDMP-X63PK-3K798-CPX3Y"
+               $CMD = "DISM.exe /Online /Set-Edition:ServerEnterprise /ProductKey:$UpgradeToWinEditionPID /AcceptEula /NoRestart"
+               }
+           if ($x -eq 'Microsoft Windows Server 2008 R2 Datacenter'){
+               $UpgradeToWinEditionPID = "74YFP-3QFB3-KQT8W-PMXWJ-7M648"
+               $CMD = "DISM.exe /Online /Set-Edition:ServerDataCenter /ProductKey:$UpgradeToWinEditionPID /AcceptEula /NoRestart"
+               }
+           }
+       'Microsoft Windows Server 2008 R2 Enterprise '{
+           Write-Verbose $CurrentWinCaption.Caption
+           if ($x -eq 'Microsoft Windows Server 2008 R2 Datacenter'){
+               $UpgradeToWinEditionPID = "74YFP-3QFB3-KQT8W-PMXWJ-7M648"
+               $CMD = "DISM.exe /Online /Set-Edition:ServerDataCenter /ProductKey:$UpgradeToWinEditionPID /AcceptEula /NoRestart"
+               }
+           }
+       'Microsoft Windows Server 2008 R2 Datacenter '{
+           Write-Verbose $CurrentWinCaption.Caption
+           }
+       'Microsoft Windows Server 2012 Standard'{
+           Write-Verbose $CurrentWinCaption.Caption
+           if ($x -eq 'Microsoft Windows Server 2012 Datacenter'){
+               $UpgradeToWinEditionPID = "48HP8-DN98B-MYWDG-T2DCC-8W83P"
+               $CMD = "DISM.exe /Online /Set-Edition:ServerDataCenter /ProductKey:$UpgradeToWinEditionPID /AcceptEula /NoRestart"
+               }
+           }
+       'Microsoft Windows Server 2012 Standard Evaluation'{
+           Write-Verbose $CurrentWinCaption.Caption
+           if ($x -eq 'Microsoft Windows Server 2012 Standard'){
+               $UpgradeToWinEditionPID = "XC9B7-NBPP2-83J2H-RHMBY-92BT4"
+               $CMD = "DISM.exe /Online /Set-Edition:ServerStandard /ProductKey:$UpgradeToWinEditionPID /AcceptEula /NoRestart"
+               }
+           if ($x -eq 'Microsoft Windows Server 2012 Datacenter'){
+               $UpgradeToWinEditionPID = "48HP8-DN98B-MYWDG-T2DCC-8W83P"
+               $CMD = "DISM.exe /Online /Set-Edition:ServerDataCenter /ProductKey:$UpgradeToWinEditionPID /AcceptEula /NoRestart"
+               }
+           }
+       'Microsoft Windows Server 2012 Datacenter Evaluation'{
+           Write-Verbose $CurrentWinCaption.Caption
+           if ($x -eq 'Microsoft Windows Server 2012 Datacenter'){
+               $UpgradeToWinEditionPID = "48HP8-DN98B-MYWDG-T2DCC-8W83P"
+               $CMD = "DISM.exe /Online /Set-Edition:ServerDataCenter /ProductKey:$UpgradeToWinEditionPID /AcceptEula /NoRestart"
+               }
+           }
+       'Microsoft Windows Server 2012 Datacenter'{
+           Write-Verbose $CurrentWinCaption.Caption
+           }
+       'Microsoft Windows Server 2012 R2 Standard'{
+           Write-Verbose $CurrentWinCaption.Caption
+           if ($x -eq 'Microsoft Windows Server 2012 R2 Datacenter'){
+               $UpgradeToWinEditionPID = "W3GGN-FT8W3-Y4M27-J84CP-Q3VJ9"
+               $CMD = "DISM.exe /Online /Set-Edition:ServerDataCenter /ProductKey:$UpgradeToWinEditionPID /AcceptEula /NoRestart"
+               }
+           }
+       'Microsoft Windows Server 2012 R2 Standard Evaluation'{
+           Write-Verbose $CurrentWinCaption.Caption
+           if ($x -eq 'Microsoft Windows Server 2012 R2 Standard'){
+               $UpgradeToWinEditionPID = "D2N9P-3P6X9-2R39C-7RTCD-MDVJX"
+               $CMD = "DISM.exe /Online /Set-Edition:ServerStandard /ProductKey:$UpgradeToWinEditionPID /AcceptEula /NoRestart"
+               }
+           if ($x -eq 'Microsoft Windows Server 2012 R2 Datacenter'){
+               $UpgradeToWinEditionPID = "W3GGN-FT8W3-Y4M27-J84CP-Q3VJ9"
+               $CMD = "DISM.exe /Online /Set-Edition:ServerDataCenter /ProductKey:$UpgradeToWinEditionPID /AcceptEula /NoRestart"
+               }
+           }
+       'Microsoft Windows Server 2012 R2 Datacenter Evaluation'{
+           Write-Verbose $CurrentWinCaption.Caption
+           if ($x -eq 'Microsoft Windows Server 2012 R2 Datacenter'){
+               $UpgradeToWinEditionPID = "W3GGN-FT8W3-Y4M27-J84CP-Q3VJ9"
+               $CMD = "DISM.exe /Online /Set-Edition:ServerDataCenter /ProductKey:$UpgradeToWinEditionPID /AcceptEula /NoRestart"
+               }
+           }
+       'Microsoft Windows Server 2012 R2 Datacenter'{
+           Write-Verbose $CurrentWinCaption.Caption
+           }
+       'Microsoft Windows Server 2016 Standard'{
+           Write-Verbose $CurrentWinCaption.Caption
+           if ($x -eq 'Microsoft Windows Server 2016 Datacenter'){
+               $UpgradeToWinEditionPID = "CB7KF-BWN84-R7R2Y-793K2-8XDDG"
+               $CMD = "DISM.exe /Online /Set-Edition:ServerDataCenter /ProductKey:$UpgradeToWinEditionPID /AcceptEula /NoRestart"
+               }
+           }
+       'Microsoft Windows Server 2016 Standard Evaluation'{
+           Write-Verbose $CurrentWinCaption.Caption
+           if ($x -eq 'Microsoft Windows Server 2016 Standard'){
+               $UpgradeToWinEditionPID = "N69G4-B89J2-4G8F4-WWYCC-J464C"
+               $CMD = "DISM.exe /Online /Set-Edition:ServerStandard /ProductKey:$UpgradeToWinEditionPID /AcceptEula /NoRestart"
+               }
+           if ($x -eq 'Microsoft Windows Server 2016 Datacenter'){
+               $UpgradeToWinEditionPID = "CB7KF-BWN84-R7R2Y-793K2-8XDDG"
+               $CMD = "DISM.exe /Online /Set-Edition:ServerDataCenter /ProductKey:$UpgradeToWinEditionPID /AcceptEula /NoRestart"
+               }
+           }
+       'Microsoft Windows Server 2016 Datacenter Evaluation'{
+           Write-Verbose $CurrentWinCaption.Caption
+           if ($x -eq 'Microsoft Windows Server 2016 Datacenter'){
+               $UpgradeToWinEditionPID = "CB7KF-BWN84-R7R2Y-793K2-8XDDG"
+               $CMD = "DISM.exe /Online /Set-Edition:ServerDataCenter /ProductKey:$UpgradeToWinEditionPID /AcceptEula /NoRestart"
+               }
+           }
+       'Microsoft Windows Server 2016 Datacenter'{
+           Write-Verbose $CurrentWinCaption.Caption
+           }
+       'Microsoft Windows Server 2019 Standard'{
+           Write-Verbose $CurrentWinCaption.Caption
+           if ($x -eq 'Microsoft Windows Server 2019 Datacenter'){
+               $UpgradeToWinEditionPID = "WMDGN-G9PQG-XVVXX-R3X43-63DFG"
+               $CMD = "DISM.exe /Online /Set-Edition:ServerDataCenter /ProductKey:$UpgradeToWinEditionPID /AcceptEula /NoRestart"
+               }
+           }
+       'Microsoft Windows Server 2019 Standard Evaluation'{
+           Write-Verbose $CurrentWinCaption.Caption
+           if ($x -eq 'Microsoft Windows Server 2019 Standard'){
+               $UpgradeToWinEditionPID = "N69G4-B89J2-4G8F4-WWYCC-J464C"
+               $CMD = "DISM.exe /Online /Set-Edition:ServerStandard /ProductKey:$UpgradeToWinEditionPID /AcceptEula /NoRestart"
+               }
+           if ($x -eq 'Microsoft Windows Server 2019 Datacenter'){
+               $UpgradeToWinEditionPID = "WMDGN-G9PQG-XVVXX-R3X43-63DFG"
+               $CMD = "DISM.exe /Online /Set-Edition:ServerDataCenter /ProductKey:$UpgradeToWinEditionPID /AcceptEula /NoRestart"
+               }
+           }
+       'Microsoft Windows Server 2019 Datacenter Evaluation'{
+           Write-Verbose $CurrentWinCaption.Caption
+           if ($x -eq 'Microsoft Windows Server 2019 Datacenter'){
+               $UpgradeToWinEditionPID = "WMDGN-G9PQG-XVVXX-R3X43-63DFG"
+               $CMD = "DISM.exe /Online /Set-Edition:ServerDataCenter /ProductKey:$UpgradeToWinEditionPID /AcceptEula /NoRestart"
+               }
+           }
+       'Microsoft Windows Server 2019 Datacenter'{
+           Write-Verbose $CurrentWinCaption.Caption
+           }
+           'Microsoft Windows Server 2022 Standard'{
+            Write-Verbose $CurrentWinCaption.Caption
+            if ($x -eq 'Microsoft Windows Server 2022 Datacenter'){
+				$UpgradeToWinEditionPID = "WX4NM-KYWYW-QJJR4-XV3QB-6VM33"
 				$CMD = "DISM.exe /Online /Set-Edition:ServerDataCenter /ProductKey:$UpgradeToWinEditionPID /AcceptEula /NoRestart"
                 }
             }
-        'Microsoft Windows Server 2008 R2 Enterprise '{
+		'Microsoft Windows Server 2022 Standard Evaluation'{
             Write-Verbose $CurrentWinCaption.Caption
-            if ($x -eq 'Microsoft Windows Server 2008 R2 Datacenter'){
-                $UpgradeToWinEditionPID = "74YFP-3QFB3-KQT8W-PMXWJ-7M648"
-				$CMD = "DISM.exe /Online /Set-Edition:ServerDataCenter /ProductKey:$UpgradeToWinEditionPID /AcceptEula /NoRestart"
-                }
-            }
-        'Microsoft Windows Server 2008 R2 Datacenter '{
-            Write-Verbose $CurrentWinCaption.Caption
-            }
-        'Microsoft Windows Server 2012 Standard'{
-            Write-Verbose $CurrentWinCaption.Caption
-            if ($x -eq 'Microsoft Windows Server 2012 Datacenter'){
-				$UpgradeToWinEditionPID = "48HP8-DN98B-MYWDG-T2DCC-8W83P"
-				$CMD = "DISM.exe /Online /Set-Edition:ServerDataCenter /ProductKey:$UpgradeToWinEditionPID /AcceptEula /NoRestart"
-                }
-            }
-        'Microsoft Windows Server 2012 Standard Evaluation'{
-            Write-Verbose $CurrentWinCaption.Caption
-            if ($x -eq 'Microsoft Windows Server 2012 Standard'){
-				$UpgradeToWinEditionPID = "XC9B7-NBPP2-83J2H-RHMBY-92BT4"
+            if ($x -eq 'Microsoft Windows Server 2022 Standard'){
+				$UpgradeToWinEditionPID = "VDYBN-27WPP-V4HQT-9VMD4-VMK7H"
 				$CMD = "DISM.exe /Online /Set-Edition:ServerStandard /ProductKey:$UpgradeToWinEditionPID /AcceptEula /NoRestart"
                 }
-            if ($x -eq 'Microsoft Windows Server 2012 Datacenter'){
-				$UpgradeToWinEditionPID = "48HP8-DN98B-MYWDG-T2DCC-8W83P"
+            if ($x -eq 'Microsoft Windows Server 2022 Datacenter'){
+				$UpgradeToWinEditionPID = "WX4NM-KYWYW-QJJR4-XV3QB-6VM33"
 				$CMD = "DISM.exe /Online /Set-Edition:ServerDataCenter /ProductKey:$UpgradeToWinEditionPID /AcceptEula /NoRestart"
                 }
             }
-        'Microsoft Windows Server 2012 Datacenter Evaluation'{
+        'Microsoft Windows Server 2022 Datacenter Evaluation'{
             Write-Verbose $CurrentWinCaption.Caption
-            if ($x -eq 'Microsoft Windows Server 2012 Datacenter'){
-				$UpgradeToWinEditionPID = "48HP8-DN98B-MYWDG-T2DCC-8W83P"
+            if ($x -eq 'Microsoft Windows Server 2022 Datacenter'){
+				$UpgradeToWinEditionPID = "WX4NM-KYWYW-QJJR4-XV3QB-6VM33"
 				$CMD = "DISM.exe /Online /Set-Edition:ServerDataCenter /ProductKey:$UpgradeToWinEditionPID /AcceptEula /NoRestart"
                 }
             }
-        'Microsoft Windows Server 2012 Datacenter'{
+        'Microsoft Windows Server 2022 Datacenter'{
             Write-Verbose $CurrentWinCaption.Caption
             }
-        'Microsoft Windows Server 2012 R2 Standard'{
-            Write-Verbose $CurrentWinCaption.Caption
-            if ($x -eq 'Microsoft Windows Server 2012 R2 Datacenter'){
-				$UpgradeToWinEditionPID = "W3GGN-FT8W3-Y4M27-J84CP-Q3VJ9"
-				$CMD = "DISM.exe /Online /Set-Edition:ServerDataCenter /ProductKey:$UpgradeToWinEditionPID /AcceptEula /NoRestart"
-                }
-            }
-        'Microsoft Windows Server 2012 R2 Standard Evaluation'{
-            Write-Verbose $CurrentWinCaption.Caption
-            if ($x -eq 'Microsoft Windows Server 2012 R2 Standard'){
-				$UpgradeToWinEditionPID = "D2N9P-3P6X9-2R39C-7RTCD-MDVJX"
-				$CMD = "DISM.exe /Online /Set-Edition:ServerStandard /ProductKey:$UpgradeToWinEditionPID /AcceptEula /NoRestart"
-                }
-            if ($x -eq 'Microsoft Windows Server 2012 R2 Datacenter'){
-				$UpgradeToWinEditionPID = "W3GGN-FT8W3-Y4M27-J84CP-Q3VJ9"
-				$CMD = "DISM.exe /Online /Set-Edition:ServerDataCenter /ProductKey:$UpgradeToWinEditionPID /AcceptEula /NoRestart"
-                }
-            }
-        'Microsoft Windows Server 2012 R2 Datacenter Evaluation'{
-            Write-Verbose $CurrentWinCaption.Caption
-            if ($x -eq 'Microsoft Windows Server 2012 R2 Datacenter'){
-				$UpgradeToWinEditionPID = "W3GGN-FT8W3-Y4M27-J84CP-Q3VJ9"
-				$CMD = "DISM.exe /Online /Set-Edition:ServerDataCenter /ProductKey:$UpgradeToWinEditionPID /AcceptEula /NoRestart"
-                }
-            }
-        'Microsoft Windows Server 2012 R2 Datacenter'{
-            Write-Verbose $CurrentWinCaption.Caption
-            }
-        'Microsoft Windows Server 2016 Standard'{
-            Write-Verbose $CurrentWinCaption.Caption
-            if ($x -eq 'Microsoft Windows Server 2016 Datacenter'){
-				$UpgradeToWinEditionPID = "CB7KF-BWN84-R7R2Y-793K2-8XDDG"
-				$CMD = "DISM.exe /Online /Set-Edition:ServerDataCenter /ProductKey:$UpgradeToWinEditionPID /AcceptEula /NoRestart"
-                }
-            }
-        'Microsoft Windows Server 2016 Standard Evaluation'{
-            Write-Verbose $CurrentWinCaption.Caption
-            if ($x -eq 'Microsoft Windows Server 2016 Standard'){
-				$UpgradeToWinEditionPID = "N69G4-B89J2-4G8F4-WWYCC-J464C"
-				$CMD = "DISM.exe /Online /Set-Edition:ServerStandard /ProductKey:$UpgradeToWinEditionPID /AcceptEula /NoRestart"
-                }
-            if ($x -eq 'Microsoft Windows Server 2016 Datacenter'){
-				$UpgradeToWinEditionPID = "CB7KF-BWN84-R7R2Y-793K2-8XDDG"
-				$CMD = "DISM.exe /Online /Set-Edition:ServerDataCenter /ProductKey:$UpgradeToWinEditionPID /AcceptEula /NoRestart"
-                }
-            }
-        'Microsoft Windows Server 2016 Datacenter Evaluation'{
-            Write-Verbose $CurrentWinCaption.Caption
-            if ($x -eq 'Microsoft Windows Server 2016 Datacenter'){
-				$UpgradeToWinEditionPID = "CB7KF-BWN84-R7R2Y-793K2-8XDDG"
-				$CMD = "DISM.exe /Online /Set-Edition:ServerDataCenter /ProductKey:$UpgradeToWinEditionPID /AcceptEula /NoRestart"
-                }
-            }
-        'Microsoft Windows Server 2016 Datacenter'{
-            Write-Verbose $CurrentWinCaption.Caption
-            }
-        'Microsoft Windows Server 2019 Standard'{
-            Write-Verbose $CurrentWinCaption.Caption
-            if ($x -eq 'Microsoft Windows Server 2019 Datacenter'){
-				$UpgradeToWinEditionPID = "WMDGN-G9PQG-XVVXX-R3X43-63DFG"
-				$CMD = "DISM.exe /Online /Set-Edition:ServerDataCenter /ProductKey:$UpgradeToWinEditionPID /AcceptEula /NoRestart"
-                }
-            }
-		'Microsoft Windows Server 2019 Standard Evaluation'{
-            Write-Verbose $CurrentWinCaption.Caption
-            if ($x -eq 'Microsoft Windows Server 2019 Standard'){
-				$UpgradeToWinEditionPID = "N69G4-B89J2-4G8F4-WWYCC-J464C"
-				$CMD = "DISM.exe /Online /Set-Edition:ServerStandard /ProductKey:$UpgradeToWinEditionPID /AcceptEula /NoRestart"
-                }
-            if ($x -eq 'Microsoft Windows Server 2019 Datacenter'){
-				$UpgradeToWinEditionPID = "WMDGN-G9PQG-XVVXX-R3X43-63DFG"
-				$CMD = "DISM.exe /Online /Set-Edition:ServerDataCenter /ProductKey:$UpgradeToWinEditionPID /AcceptEula /NoRestart"
-                }
-            }
-        'Microsoft Windows Server 2019 Datacenter Evaluation'{
-            Write-Verbose $CurrentWinCaption.Caption
-            if ($x -eq 'Microsoft Windows Server 2019 Datacenter'){
-				$UpgradeToWinEditionPID = "WMDGN-G9PQG-XVVXX-R3X43-63DFG"
-				$CMD = "DISM.exe /Online /Set-Edition:ServerDataCenter /ProductKey:$UpgradeToWinEditionPID /AcceptEula /NoRestart"
-                }
-            }
-        'Microsoft Windows Server 2019 Datacenter'{
-            Write-Verbose $CurrentWinCaption.Caption
-            }
-			Default {
-            Write-Verbose "Unable to upgrade."
-            }
-        }
+           Default {
+           Write-Verbose "Unable to upgrade."
+           }
+       }
 }
 
 #Set return from forms to Zero
@@ -453,15 +503,15 @@ $X = $objListBox.SelectedItem
 
 #Execute Upgrade
 If($CMD -ne ""){
-    cmd.exe /c $CMD
+   cmd.exe /c $CMD
 }
 
 
 #Hold it for a sec...
 if ($LastExitCode -eq '3010'){
-    Write-Output "Reboot needed"
-    . Show-BoxReboot
-    }
+   Write-Output "Reboot needed"
+   . Show-BoxReboot
+   }
 Start-Sleep 5
 
 Write-Host -NoNewLine "Press any key to continue..."
